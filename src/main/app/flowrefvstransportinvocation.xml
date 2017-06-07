@@ -50,6 +50,7 @@ return message.payload]]></scripting:script>
         <set-payload value=" #[message.payload]" doc:name="Set Payload"/>
         <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
         <http:request config-ref="HTTP_Request_Configuration" path="/external" method="POST" doc:name="HTTP"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="(Invocation By Transport) After Invocaiton  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
         <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
     </flow>
@@ -63,12 +64,14 @@ return message.payload]]></scripting:script>
         <set-payload value=" #[message.payload]" doc:name="Set Payload"/>
         <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
         <flow-ref name="ExternalFlow" doc:name="ExternalFlow"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="(Invocation By FlowRef) After Invocaiton  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
         <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
     </flow>
     <flow name="ExternalFlow">
         <http:listener config-ref="HTTP_8083" path="/external" doc:name="HTTP"/>
         <logger message="(External Flow)  Initial Invocation Settings  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
         <set-payload value="#[payload] + &quot;appended string from ExternalFlow ...&quot;" doc:name="Set Payload"/>
     </flow>
