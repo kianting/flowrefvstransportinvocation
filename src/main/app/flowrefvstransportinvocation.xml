@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <http:listener-config name="HTTP_8081" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <http:listener-config name="HTTP_8082" host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration"/>
+    <http:listener-config name="HTTP_8083" host="0.0.0.0" port="8083" doc:name="HTTP Listener Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8083" doc:name="HTTP Request Configuration"/>
+    <sub-flow name="PrintMessage">
+        <scripting:component doc:name="Groovy">
+            <scripting:script engine="Groovy"><![CDATA[println "---------------------------------------------------------------------------"
+println "List of inbound properties ..."
+message.getInboundProperty('http.query.params').each{k,v -> println "${k}:${v}" }
+println " "
+
+println "List of outbound properties ..."
+message.getOutboundProperty('http.query.params').each{k,v -> println "${k}:${v}" }
+println " "
+
+println "flowVars :"
+println flowVars.randomFlowVariable
+println " "
+
+println "sessionVars :"
+println sessionVars.randomSessionVariable
+println " "
+
+println "Payload ..."
+println message.payload
+println "---------------------------------------------------------------------------"
+println " "
+
+return message.payload]]></scripting:script>
+        </scripting:component>
+    </sub-flow>
+    <flow name="InvocationByTransport">
+        <http:listener config-ref="HTTP_8081" path="/transport" doc:name="HTTP"/>
+        <logger message="(Invocation By Transport) Before Invocaiton : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-variable variableName="randomFlowVariable" value="#[&quot;randomFlowVariable&quot;]" doc:name="set_randomFlowVariable"/>
+        <set-session-variable variableName="randomSessionVariable" value="#[&quot;randomSessionVariable&quot;]" doc:name="set_randomSessionVariable"/>
+        <copy-properties propertyName="http.*" doc:name="Copy_HTTP_Property"/>
+        <set-payload value=" #[message.payload]" doc:name="Set Payload"/>
+        <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/external" method="POST" doc:name="HTTP"/>
+        <logger message="(Invocation By Transport) After Invocaiton  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
+    </flow>
+    <flow name="InvocationByFlowRef">
+        <http:listener config-ref="HTTP_8082" path="/flowref" doc:name="HTTP"/>
+        <logger message="(Invocation By FlowRef) Before Invocaiton  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-session-variable variableName="randomSessionVariable" value="#[&quot;randomSessionVariable&quot;]" doc:name="set_randomSessionVariable"/>
+        <set-variable variableName="randomFlowVariable" value="#[&quot;randomFlowVariable&quot;]" doc:name="set_randomFlowVariable"/>
+        <copy-properties propertyName="http.*" doc:name="Copy_HTTP_Property"/>
+        <set-payload value=" #[message.payload]" doc:name="Set Payload"/>
+        <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
+        <flow-ref name="ExternalFlow" doc:name="ExternalFlow"/>
+        <logger message="(Invocation By FlowRef) After Invocaiton  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
+    </flow>
+    <flow name="ExternalFlow">
+        <http:listener config-ref="HTTP_8083" path="/external" doc:name="HTTP"/>
+        <logger message="(External Flow)  Initial Invocation Settings  : ---------------------------------------------------------------------------" level="INFO" doc:name="Logger"/>
+        <flow-ref name="PrintMessage" doc:name="PrintMessage"/>
+        <set-payload value="#[payload] + &quot;appended string from ExternalFlow ...&quot;" doc:name="Set Payload"/>
+    </flow>
+</mule>
