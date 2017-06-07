@@ -24,7 +24,7 @@ println "List of outbound properties ..."
 message.getOutboundProperty('http.query.params').each{k,v -> println "${k}:${v}" }
 println " "
 
-println "flowVars :"
+println "flowVars :" 
 println flowVars.randomFlowVariable
 println " "
 
